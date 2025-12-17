@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Preoperativa Hipotermia - Busqueda SAR/UAS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --danger: #f97373;
+      --shadow-soft: 0 20px 40px rgba(0,0,0,0.5);
+      --radius-xl: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 50%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .page { max-width: 1200px; margin: 0 auto; padding: 16px 16px 40px; }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(14px);
+      background: linear-gradient(to bottom, rgba(15,23,42,0.97), rgba(15,23,42,0.9), transparent);
+      padding-bottom: 10px; margin-bottom: 20px;
+    }
+
+    .title-block { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 12px; }
+    h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.03em; display: flex; align-items: center; gap: 8px; }
+    h1 span.badge { font-size: 0.7rem; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .subtitle { font-size: 0.85rem; color: var(--muted); max-width: 500px; }
+
+    .legend-card {
+      background: var(--card); border-radius: var(--radius-xl); border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft); padding: 10px 14px 14px; overflow: auto;
+    }
+    .legend-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .legend-title h2 { font-size: 0.95rem; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .legend-caption { font-size: 0.75rem; color: var(--muted); text-align: right; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 600px; }
+    thead { background: #020617; }
+    th, td { border: 1px solid #111827; padding: 6px 8px; text-align: center; }
+    th { font-weight: 600; color: #e5e7eb; }
+    td.label-col { font-weight: 500; text-align: left; white-space: nowrap; }
+
+    .chip { display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+    .chip-green   { background: #166534; color: #bbf7d0; }
+    .chip-yellow  { background: #854d0e; color: #fef9c3; }
+    .chip-orange  { background: #7c2d12; color: #fed7aa; }
+    .chip-red     { background: #7f1d1d; color: #fecaca; }
+    .chip-red-dark{ background: #450a0a; color: #fecaca; }
+
+    .layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; }
+    @media (max-width: 880px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+    .card { background: rgba(15,23,42,0.96); border-radius: var(--radius-xl); border: 1px solid var(--border); box-shadow: var(--shadow-soft); padding: 16px 18px 18px; }
+    .card h3 { margin: 0 0 8px; font-size: 1rem; }
+    .card p.caption { margin: 0 0 12px; font-size: 0.8rem; color: var(--muted); }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: minmax(0, 1fr); } }
+
+    label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+    input, select {
+      background: #020617; border-radius: 10px; border: 1px solid #1f2937;
+      padding: 7px 9px; color: var(--text); font-size: 0.85rem; outline: none;
+      transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(56,189,248,0.6); }
+    input::placeholder { color: #4b5563; }
+    .helper-text { font-size: 0.7rem; color: #6b7280; }
+
+    .btn-row { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      border-radius: 999px; border: none; padding: 7px 14px;
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s, opacity 0.15s;
+    }
+    button.primary { background: var(--accent); color: #0b1120; box-shadow: 0 12px 25px rgba(56,189,248,0.35); }
+    button.primary:hover { transform: translateY(-1px); box-shadow: 0 16px 30px rgba(56,189,248,0.45); }
+    button.secondary { background: #020617; color: var(--muted); border: 1px solid #374151; }
+    button.secondary:hover { background: #111827; }
+    button:active { transform: translateY(0); box-shadow: none; }
+
+    .results-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px 14px; margin-top: 6px; }
+    @media (max-width: 720px) { .results-grid { grid-template-columns: minmax(0,1fr); } }
+
+    .result-block { border-radius: 14px; padding: 10px 12px; background: #020617; border: 1px solid #1f2937; }
+    .result-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 8px; }
+    .result-value { font-size: 1rem; font-weight: 600; }
+    .result-chip { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; }
+    .result-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+    .result-sub { font-size: 0.75rem; color: var(--muted); }
+    .result-highlight { font-size: 0.9rem; font-weight: 600; }
+
+    .warning { margin-top: 6px; font-size: 0.7rem; color: #f97373; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="title-block">
+        <div>
+          <h1>
+            Preoperativa de hipotermia
+            <span class="badge">SAR / UAS</span>
+          </h1>
+          <div class="subtitle">
+            Introduce condiciones ambientales y datos de la víctima para estimar riesgo de hipotermia y ventana orientativa de tiempo según perfil (A/B/C).
+          </div>
+        </div>
+      </div>
+
+      <div class="legend-card">
+        <div class="legend-title">
+          <h2>Tabla referencial de riesgo por sensación térmica (Wind Chill)</h2>
+          <div class="legend-caption">
+            Valores orientativos para planificación operativa. No es herramienta médica.
+          </div>
+        </div>
+        <div class="legend-table-wrapper">
+          <table>
+            <thead>
+            <tr>
+              <th>Sensación térmica (°C)</th>
+              <th>Clasificación</th>
+              <th>Riesgo general</th>
+              <th>Perfil A<br/><small>Seco, buena ropa, en movimiento</small></th>
+              <th>Perfil B<br/><small>Seco, ropa normal, poco movimiento</small></th>
+              <th>Perfil C<br/><small>Mojado o tumbado</small></th>
+              <th>Nivel</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td class="label-col">&gt; +5</td>
+              <td>Frío leve</td>
+              <td>Bajo</td>
+              <td>&gt; 8 h</td>
+              <td>&gt; 6 h</td>
+              <td>4–6 h</td>
+              <td><span class="chip chip-green">Verde</span></td>
+            </tr>
+            <tr>
+              <td class="label-col">+5 a 0</td>
+              <td>Frío moderado</td>
+              <td>Moderado</td>
+              <td>4–8 h</td>
+              <td>3–6 h</td>
+              <td>2–4 h</td>
+              <td><span class="chip chip-yellow">Verde / Amarillo</span></td>
+            </tr>
+            <tr>
+              <td class="label-col">0 a –10</td>
+              <td>Frío intenso</td>
+              <td>Alto</td>
+              <td>2–4 h</td>
+              <td>2–3 h</td>
+              <td>1–2 h</td>
+              <td><span class="chip chip-yellow">Amarillo / Naranja</span></td>
+            </tr>
+            <tr>
+              <td class="label-col">–10 a –20</td>
+              <td>Muy frío</td>
+              <td>Muy alto</td>
+              <td>1–2 h</td>
+              <td>1–1.5 h</td>
+              <td>0.5–1 h</td>
+              <td><span class="chip chip-orange">Naranja</span></td>
+            </tr>
+            <tr>
+              <td class="label-col">–20 a –30</td>
+              <td>Riesgo extremo</td>
+              <td>Crítico</td>
+              <td>30–60 min</td>
+              <td>~30 min</td>
+              <td>15–30 min</td>
+              <td><span class="chip chip-red">Rojo</span></td>
+            </tr>
+            <tr>
+              <td class="label-col">&lt; –30</td>
+              <td>Frío extremo</td>
+              <td>Crítico</td>
+              <td>&lt; 30 min</td>
+              <td>15–30 min</td>
+              <td>&lt; 15 min</td>
+              <td><span class="chip chip-red-dark">Rojo oscuro</span></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="card">
+        <h3>Datos ambientales y de víctima</h3>
+        <p class="caption">
+          Introduce los datos que tengas preoperativamente. El cálculo se basa en ΔT, Wind Chill, edad y perfil A/B/C.
+        </p>
+
+        <div class="form-grid">
+          <label>
+            Temperatura del aire (°C)
+            <input id="temp" type="number" step="0.1" placeholder="Ej: 3" />
+          </label>
+
+          <label>
+            Punto de rocío (°C)
+            <input id="dew" type="number" step="0.1" placeholder="Ej: 1" />
+          </label>
+
+          <label>
+            Viento (km/h)
+            <input id="wind" type="number" step="0.1" placeholder="Ej: 25" />
+          </label>
+
+          <label>
+            Edad aproximada (años)
+            <input id="age" type="number" step="1" min="0" placeholder="Ej: 65" />
+          </label>
+
+          <label>
+            Perfil operativo (A / B / C)
+            <select id="profile">
+              <option value="">Selecciona perfil…</option>
+              <option value="A">Perfil A – Seco, buena ropa, en movimiento</option>
+              <option value="B">Perfil B – Seco, ropa normal, poco movimiento</option>
+              <option value="C">Perfil C – Mojado o tumbado, ropa ligera/normal</option>
+            </select>
+          </label>
+
+          <label>
+            Notas rápidas (opcional)
+            <input id="notes" type="text" placeholder="Ej: posible caída a barranco, lluvia previa…" />
+          </label>
+        </div>
+
+        <div class="btn-row">
+          <button class="primary" id="calcBtn">Calcular</button>
+          <button class="secondary" id="clearBtn">Limpiar</button>
+        </div>
+
+        <div class="warning">
+          ⚠ Herramienta de apoyo a la decisión. No sustituye valoración médica ni protocolos oficiales.
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Resultados preoperativos</h3>
+        <p class="caption">
+          ΔT, sensación térmica, riesgos y ventana de tiempo estimada según el perfil seleccionado y la edad.
+        </p>
+
+        <div class="results-grid">
+          <div class="result-block">
+            <div class="result-title">
+              <span>ΔT (T - Td)</span>
+              <span class="result-chip">Humedad / saturación</span>
+            </div>
+            <div class="result-row">
+              <div class="result-value" id="deltaTValue">–</div>
+              <div class="result-sub" id="humidityRisk">Riesgo humedad: –</div>
+            </div>
+          </div>
+
+          <div class="result-block">
+            <div class="result-title">
+              <span>Sensación térmica (Wind Chill)</span>
+              <span class="result-chip">Frío percibido</span>
+            </div>
+            <div class="result-row">
+              <div class="result-value" id="wcValue">–</div>
+              <div class="result-sub" id="coldRisk">Riesgo por frío: –</div>
+            </div>
+          </div>
+
+          <div class="result-block">
+            <div class="result-title">
+              <span>Tiempos por perfil</span>
+              <span class="result-chip">A / B / C (orientativos)</span>
+            </div>
+            <div class="result-sub" id="allProfilesTimes">
+              Perfil A: –<br/>
+              Perfil B: –<br/>
+              Perfil C: –
+            </div>
+          </div>
+
+          <div class="result-block">
+            <div class="result-title">
+              <span>Ventana estimada seleccionada</span>
+              <span class="result-chip" id="selectedProfileLabel">Perfil seleccionado: –</span>
+            </div>
+            <div class="result-row">
+              <div class="result-highlight" id="finalTime">–</div>
+            </div>
+            <div class="result-sub" id="ageNote">Edad / vulnerabilidad: –</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function calcDeltaT(temp, dew) {
+      if (isNaN(temp) || isNaN(dew)) return null;
+      return temp - dew;
+    }
+    function riskHumidity(deltaT) {
+      if (deltaT === null) return "–";
+      if (deltaT <= 2) return "MUY ALTO";
+      if (deltaT <= 5) return "ALTO";
+      if (deltaT <= 10) return "MODERADO";
+      return "BAJO";
+    }
+    function calcWindChill(temp, wind) {
+      if (isNaN(temp) || isNaN(wind)) return null;
+      return 13.12 + 0.6215 * temp - 11.37 * Math.pow(wind, 0.16) + 0.3965 * temp * Math.pow(wind, 0.16);
+    }
+    function riskCold(wc) {
+      if (wc === null) return "–";
+      if (wc > 5) return "BAJO";
+      if (wc > 0) return "MODERADO";
+      if (wc > -10) return "ALTO";
+      if (wc > -20) return "MUY ALTO";
+      return "CRITICO";
+    }
+    function timeProfileA(wc) {
+      if (wc === null) return "–";
+      if (wc > 5) return "> 8 h";
+      if (wc > 0) return "4–8 h";
+      if (wc > -10) return "2–4 h";
+      if (wc > -20) return "1–2 h";
+      if (wc > -30) return "30–60 min";
+      return "< 30 min";
+    }
+    function timeProfileB(wc) {
+      if (wc === null) return "–";
+      if (wc > 5) return "> 6 h";
+      if (wc > 0) return "3–6 h";
+      if (wc > -10) return "2–3 h";
+      if (wc > -20) return "1–1.5 h";
+      if (wc > -30) return "~30 min";
+      return "15–30 min";
+    }
+    function timeProfileC(wc) {
+      if (wc === null) return "–";
+      if (wc > 5) return "4–6 h";
+      if (wc > 0) return "2–4 h";
+      if (wc > -10) return "1–2 h";
+      if (wc > -20) return "0.5–1 h";
+      if (wc > -30) return "15–30 min";
+      return "< 15 min";
+    }
+    function selectTimeByProfile(profile, wc) {
+      if (!profile) return "–";
+      if (profile === "A") return timeProfileA(wc);
+      if (profile === "B") return timeProfileB(wc);
+      if (profile === "C") return timeProfileC(wc);
+      return "Perfil inválido";
+    }
+    function ageRiskNote(age) {
+      if (isNaN(age)) return "Edad no especificada.";
+      if (age < 12 || age > 65) return "Edad en rango de mayor vulnerabilidad térmica (reducir ventana estimada).";
+      return "Edad adulto estándar (18–65): se aplica tabla base.";
+    }
+
+    document.getElementById("calcBtn").addEventListener("click", function () {
+      const temp = parseFloat(document.getElementById("temp").value);
+      const dew = parseFloat(document.getElementById("dew").value);
+      const wind = parseFloat(document.getElementById("wind").value);
+      const age = parseInt(document.getElementById("age").value, 10);
+      const profile = document.getElementById("profile").value;
+
+      const deltaT = calcDeltaT(temp, dew);
+      const humRisk = riskHumidity(deltaT);
+      const wc = calcWindChill(temp, wind);
+      const coldR = riskCold(wc);
+
+      const tA = timeProfileA(wc);
+      const tB = timeProfileB(wc);
+      const tC = timeProfileC(wc);
+
+      let selectedTime = selectTimeByProfile(profile, wc);
+      let ageText = ageRiskNote(age);
+
+      if (!isNaN(age) && (age < 12 || age > 65) && selectedTime !== "–" && selectedTime !== "Perfil inválido") {
+        selectedTime = selectedTime + " (edad riesgo)";
+      }
+
+      document.getElementById("deltaTValue").textContent =
+        (deltaT === null || isNaN(deltaT)) ? "–" : deltaT.toFixed(1) + " °C";
+      document.getElementById("humidityRisk").textContent =
+        "Riesgo humedad: " + humRisk;
+
+      document.getElementById("wcValue").textContent =
+        (wc === null || isNaN(wc)) ? "–" : wc.toFixed(1) + " °C";
+      document.getElementById("coldRisk").textContent =
+        "Riesgo por frío: " + coldR;
+
+      document.getElementById("allProfilesTimes").innerHTML =
+        "Perfil A: " + tA + "<br/>" +
+        "Perfil B: " + tB + "<br/>" +
+        "Perfil C: " + tC;
+
+      document.getElementById("selectedProfileLabel").textContent =
+        profile ? "Perfil seleccionado: " + profile : "Perfil seleccionado: –";
+
+      document.getElementById("finalTime").textContent = selectedTime;
+      document.getElementById("ageNote").textContent = ageText;
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", function () {
+      document.getElementById("temp").value = "";
+      document.getElementById("dew").value = "";
+      document.getElementById("wind").value = "";
+      document.getElementById("age").value = "";
+      document.getElementById("profile").value = "";
+      document.getElementById("notes").value = "";
+
+      document.getElementById("deltaTValue").textContent = "–";
+      document.getElementById("humidityRisk").textContent = "Riesgo humedad: –";
+      document.getElementById("wcValue").textContent = "–";
+      document.getElementById("coldRisk").textContent = "Riesgo por frío: –";
+      document.getElementById("allProfilesTimes").innerHTML =
+        "Perfil A: –<br/>Perfil B: –<br/>Perfil C: –";
+      document.getElementById("selectedProfileLabel").textContent =
+        "Perfil seleccionado: –";
+      document.getElementById("finalTime").textContent = "–";
+      document.getElementById("ageNote").textContent =
+        "Edad / vulnerabilidad: –";
+    });
+  </script>
+</body>
+</html>
